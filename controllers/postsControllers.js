@@ -46,12 +46,16 @@ exports.update = (req, res, next) => {
     return res.json(post)
 }
 
-exports.destroy = (req, res, next) => {
+exports.destroy = async (req, res, next) => {
     const id = Number(req.params.id);
-    const index = posts.findIndex(p => p.id === id);
-    if (index === -1) return next();
-
-    posts.splice(index, 1);
-    console.log('Posts aggiornati:', posts);
-    return res.status(204).end()
+    const { query } = require('../database/db');
+    try {
+        const result = await query('DELETE FROM posts WHERE id = ?', [id]);
+        // result.affectedRows is available for DELETE queries
+        if (!result || result.affectedRows === 0) return next();
+        return res.status(204).end();
+    } catch (err) {
+        console.error('Error deleting post:', err.message || err);
+        return next(err);
+    }
 };
