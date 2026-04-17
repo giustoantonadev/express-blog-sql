@@ -7,14 +7,21 @@ const PORT = process.env.PORT || 3000;
 // Serve static assets from public/images at /images
 app.use('/images', express.static(path.join(__dirname, 'public', 'images')));
 
-// Shared posts data
+
 const posts = require('./data/posts');
 
 app.use(express.json());
 
 
-app.get('/', (req, res) => {
-    res.send('Server del mio blog');
+app.get('/', async (req, res) => {
+    try {
+        const { query } = require('./database/db');
+        const rows = await query('SELECT id, title, content, image FROM posts ORDER BY id DESC');
+        res.json(rows);
+    } catch (err) {
+        console.error('Error fetching posts:', err.message || err);
+        res.status(500).json({ error: 'Unable to fetch posts' });
+    }
 });
 
 app.get('/bacheca', (req, res) => {
