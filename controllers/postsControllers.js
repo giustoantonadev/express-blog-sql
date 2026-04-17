@@ -11,13 +11,17 @@ exports.index = (req, res) => {
     res.json(result)
 };
 
-exports.show = (req, res, next) => {
+exports.show = async (req, res, next) => {
     const id = Number(req.params.id);
-    const post = posts.find(p => p.id === id);
-   // throw new Error('esempio di errore')
-    if (!post) return next();
-
-    return res.json(post)
+    const { query } = require('../database/db');
+    try {
+        const rows = await query('SELECT id, title, content, image FROM posts WHERE id = ?', [id]);
+        if (!rows || rows.length === 0) return next();
+        return res.json(rows[0]);
+    } catch (err) {
+        console.error('Error fetching post:', err.message || err);
+        return next(err);
+    }
 };
 
 exports.store = (req, res) => {
