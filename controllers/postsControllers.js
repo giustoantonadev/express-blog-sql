@@ -17,7 +17,15 @@ exports.show = async (req, res, next) => {
     try {
         const rows = await query('SELECT id, title, content, image FROM posts WHERE id = ?', [id]);
         if (!rows || rows.length === 0) return next();
-        return res.json(rows[0]);
+        const post = rows[0];
+
+        // fetch tags for this post and return only labels for readability
+        const tagRows = await query(
+            'SELECT tags.label FROM tags JOIN post_tag ON post_tag.tag_id = tags.id WHERE post_tag.post_id = ?',
+            [id]
+        );
+        post.tags = Array.isArray(tagRows) ? tagRows.map(r => r.label) : [];
+        return res.json(post);
     } catch (err) {
         console.error('Error fetching post:', err.message || err);
         return next(err);
