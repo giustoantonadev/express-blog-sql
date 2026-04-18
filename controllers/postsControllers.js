@@ -1,14 +1,33 @@
 const posts = require('../data/posts')
 
-exports.index = (req, res) => {
-    let result = posts;
+exports.index = async (req, res, next) => {
+    try {
+        const { query } = require('../database/db');
+        let rows;
 
-    if (req.query.tag) {
-        result = posts.filter(post => {
-            return Array.isArray(post.tags) && post.tags.includes(req.query.tag)
-        })
+        if (req.query.tag) {
+            rows = await query(
+                'SELECT p.id, p.title, p.content, p.image FROM posts p JOIN post_tag pt ON pt.post_id = p.id JOIN tags t ON t.id = pt.tag_id WHERE t.label = ? ORDER BY p.id DESC',
+                [req.query.tag]
+            );
+        } else {
+            rows = await query('SELECT id, title, content, image FROM posts ORDER BY id DESC');
+        }
+
+        const postsWithTags = await Promise.all((rows || []).map(async (post) => {
+            const tagRows = await query(
+                'SELECT tags.label FROM tags JOIN post_tag ON post_tag.tag_id = tags.id WHERE post_tag.post_id = ?',
+                [post.id]
+            );
+            post.tags = Array.isArray(tagRows) ? tagRows.map(r => r.label) : [];
+            return post;
+        }));
+
+        return res.json(postsWithTags);
+    } catch (err) {
+        console.error('Error fetching posts:', err.message || err);
+        return next(err);
     }
-    res.json(result)
 };
 
 exports.show = async (req, res, next) => {

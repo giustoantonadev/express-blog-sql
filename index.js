@@ -13,15 +13,9 @@ const posts = require('./data/posts');
 app.use(express.json());
 
 
-app.get('/', async (req, res) => {
-    try {
-        const { query } = require('./database/db');
-        const rows = await query('SELECT id, title, content, image FROM posts ORDER BY id DESC');
-        res.json(rows);
-    } catch (err) {
-        console.error('Error fetching posts:', err.message || err);
-        res.status(500).json({ error: 'Unable to fetch posts' });
-    }
+app.get('/', (req, res) => {
+    const qs = Object.keys(req.query || {}).length ? '?' + new URLSearchParams(req.query).toString() : '';
+    return res.redirect(302, '/posts' + qs);
 });
 
 app.get('/bacheca', (req, res) => {
